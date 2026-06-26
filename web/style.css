@@ -1,0 +1,194 @@
+/* ==========================================================================
+   主题色板移植自 Pico.css v2 深色主题 (github.com/picocss/pico, 16.7k★)
+   原始 :root[data-theme=dark] token 原样引用，仅做局部适配。
+   ========================================================================== */
+:root{
+  /* ---- Pico v2 dark tokens ---- */
+  --background-body:rgb(19,22.5,30.5);   /* 页面底 */
+  --background:rgb(21.6,26.4,35.2);      /* 卡片表面 */
+  --background-alt:rgb(25.6,31.2,41.6);  /* 控件/输入底 */
+  --color:#c2c7d0;                       /* 主文字 */
+  --muted-color:#7b8495;                 /* 次文字 */
+  --muted-border-color:#202632;          /* 细分隔线/边框 */
+  --primary:#01aaff;                     /* 强调色 */
+  --primary-background:#0172ad;          /* 主按钮底 */
+  --primary-hover:#79c0ff;               /* 强调悬停文字 */
+  --primary-hover-background:#017fc0;    /* 主按钮悬停 */
+  --primary-focus:rgba(1,170,255,.375);  /* 聚焦 ring */
+  --secondary-background:#525f7a;        /* 次级按钮底 */
+  --primary-inverse:#fff;
+  --code:#ffbe85;                        /* 代码色 */
+
+  /* ---- 局部适配 ---- */
+  --border:var(--muted-border-color);
+  --border-hi:#2c3545;
+  --hover:rgba(255,255,255,.035);
+  --text:var(--color);
+  --text-dim:var(--muted-color);
+  --text-faint:#5a6373;
+  --accent:var(--primary);
+  --accent-text:var(--primary-hover);
+  --green:#4cb782;
+
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow:0 1px 3px rgba(0,0,0,.4);
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  --mono:"SF Mono","JetBrains Mono",Consolas,monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:var(--font);
+  background:var(--background-body);
+  color:var(--text);
+  min-height:100vh;
+  padding:40px 20px 64px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  font-feature-settings:"cv02","cv03","cv04","cv11";
+}
+
+.app{max-width:760px;margin:0 auto}
+
+/* header */
+header{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:0 4px 24px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{font-size:22px;line-height:1;opacity:.95}
+header h1{font-size:17px;font-weight:600;letter-spacing:-.2px}
+.subtitle{color:var(--text-dim);font-size:13px;margin-top:2px;font-weight:400}
+
+/* language switch (Pico secondary button style) */
+.lang-switch{
+  display:flex;align-items:center;gap:2px;
+  background:var(--background);padding:3px;border-radius:var(--radius-sm);
+  border:1px solid var(--border);
+}
+.lang-label{font-size:11px;color:var(--text-faint);padding:0 6px 0 8px;font-weight:500}
+.lang-btn{
+  background:transparent;border:none;color:var(--text-dim);
+  padding:5px 11px;border-radius:4px;font-size:12.5px;font-weight:500;cursor:pointer;
+  transition:all .12s;font-family:var(--font);
+}
+.lang-btn:hover{color:var(--text);background:var(--hover)}
+.lang-btn.active{background:var(--primary-background);color:var(--primary-inverse)}
+
+/* card */
+.card{
+  background:var(--background);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:24px;
+}
+
+/* fields (Pico form control: 输入框实色底 + 细边框 + 蓝色 focus ring) */
+.field{margin-bottom:20px}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:block;font-size:11.5px;font-weight:600;color:var(--text-dim);
+  margin-bottom:7px;letter-spacing:.2px;
+}
+.select-wrap{position:relative}
+select,input[type=text]{
+  width:100%;padding:10px 12px;font-size:14px;font-family:var(--font);
+  background:var(--background-alt);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  appearance:none;-webkit-appearance:none;transition:border-color .12s,box-shadow .12s;
+}
+select{padding-right:34px;cursor:pointer}
+.select-wrap::after{
+  content:"";position:absolute;right:13px;top:50%;width:7px;height:7px;
+  border-right:1.5px solid var(--text-dim);border-bottom:1.5px solid var(--text-dim);
+  transform:translateY(-65%) rotate(45deg);pointer-events:none;
+}
+select:focus,input:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--primary-focus);
+}
+select:disabled{opacity:.45;cursor:not-allowed}
+select option{background:var(--background-alt);color:var(--text)}
+
+/* cascade levels grid */
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.levels .field{margin-bottom:0}
+
+/* detail (Pico card + hairline divider style) */
+.detail{
+  margin-top:24px;padding:0;
+  background:var(--background-alt);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  overflow:hidden;
+}
+.detail.hidden{display:none}
+.detail-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.detail-head .flag{font-size:22px;line-height:1}
+.detail-head h3{font-size:15px;font-weight:600;color:var(--text)}
+.detail table{width:100%;border-collapse:collapse;font-size:13px}
+.detail td{padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:top}
+.detail tr:last-child td{border-bottom:none}
+.detail td:first-child{
+  color:var(--text-faint);width:88px;white-space:nowrap;
+  font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;
+}
+.detail td.chain{color:var(--accent-text);font-weight:500}
+.detail code{
+  background:rgba(255,190,133,.12);color:var(--code);
+  padding:2px 7px;border-radius:4px;font-size:12px;font-family:var(--mono);
+}
+
+/* search */
+.search-row{display:flex;gap:8px;margin-top:24px}
+.search-row input{flex:1}
+/* Pico primary button: 蓝底白字 */
+.primary-btn{
+  padding:0 20px;font-size:13.5px;font-weight:600;font-family:var(--font);
+  border:1px solid var(--primary-background);border-radius:var(--radius-sm);cursor:pointer;
+  color:var(--primary-inverse);
+  background:var(--primary-background);transition:background .12s,border-color .12s;
+  white-space:nowrap;
+}
+.primary-btn:hover{background:var(--primary-hover-background);border-color:var(--primary-hover-background)}
+.primary-btn:active{background:var(--primary-background)}
+
+.search-results{margin-top:12px}
+.result-list{display:flex;flex-direction:column;gap:6px;max-height:360px;overflow-y:auto;padding-right:2px}
+.result-list::-webkit-scrollbar{width:8px}
+.result-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+.result-list::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.2)}
+.result-item{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:var(--background-alt);border:1px solid var(--border);border-radius:var(--radius-sm);
+  cursor:pointer;transition:border-color .12s,background .12s;
+}
+.result-item:hover{border-color:var(--accent);background:var(--hover)}
+.r-flag{font-size:18px;line-height:1}
+.r-body{display:flex;flex-direction:column;gap:1px;min-width:0}
+.r-name{font-weight:600;color:var(--text);font-size:13.5px}
+.r-meta{font-size:11.5px;color:var(--text-faint)}
+.r-meta code{font-size:11px}
+
+.hint{color:var(--text-faint);font-size:13px;padding:8px 2px}
+
+footer{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:20px;padding:0 4px;color:var(--text-faint);font-size:12px;flex-wrap:wrap;gap:8px;
+}
+.lang-hint{opacity:.7}
+
+/* responsive */
+@media (max-width:600px){
+  body{padding:20px 12px 40px}
+  header{padding-bottom:16px}
+  header h1{font-size:15px}
+  .card{padding:18px}
+  .levels{grid-template-columns:1fr}
+  .search-row{flex-direction:column}
+  .primary-btn{padding:10px}
+  .lang-label{display:none}
+}

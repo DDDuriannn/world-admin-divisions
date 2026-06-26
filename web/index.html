@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>世界行政区划检索</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="logo">🌐</span>
+      <div>
+        <h1 id="t-title">世界行政区划检索</h1>
+        <p id="t-subtitle" class="subtitle">选择国家，逐级筛选行政区划</p>
+      </div>
+    </div>
+    <div class="lang-switch" id="lang-switch">
+      <span class="lang-label" id="t-lang-label">语言</span>
+      <button class="lang-btn" data-lang="zh" id="t-lang-zh">中文</button>
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn" data-lang="local" id="t-lang-local">本地</button>
+    </div>
+  </header>
+
+  <main class="card">
+    <div class="field">
+      <label id="t-country-label">国家 / 地区</label>
+      <div class="select-wrap">
+        <select id="country"><option value="">— · —</option></select>
+      </div>
+    </div>
+
+    <div id="levels" class="levels"></div>
+
+    <div id="detail" class="detail hidden"></div>
+
+    <div class="search-row">
+      <input id="q" type="text" placeholder="搜索…">
+      <button id="search-btn" class="primary-btn">搜索</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+  </main>
+
+  <footer>
+    <span id="stats"></span>
+    <span class="lang-hint" id="t-lang-hint"></span>
+  </footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let lang = localStorage.getItem('lang') || 'zh';
+let texts = {};
+let currentCountry = '';
+
+const COUNTRY_FLAG = {}; // iso2 -> emoji，由 countries 数据简单派生（用 regional indicator）
+function flagEmoji(iso2){
+  if(!iso2 || iso2.length!==2) return '';
+  try{
+    return String.fromCodePoint(...[...iso2.toUpperCase()].map(c=>0x1F1E6+c.charCodeAt(0)-65));
+  }catch(e){return '';}
+}
+
+function T(key, vars){
+  let s = texts[key] || key;
+  if(vars) for(const k in vars) s = s.replace('{'+k+'}', vars[k]);
+  return s;
+}
+
+async function loadI18n(){
+  texts = (await fetch(`/api/i18n?lang=${lang}`).then(r=>r.json())).texts;
+  applyTexts();
+}
+function applyTexts(){
+  document.title = T('title');
+  $('#t-title').textContent = T('title');
+  $('#t-subtitle').textContent = T('subtitle');
+  $('#t-country-label').textContent = T('select_country')==='Select country' ? 'Country / Region' : '国家 / 地区';
+  $('#q').placeholder = T('search_placeholder');
+  $('#search-btn').textContent = T('search_btn');
+  $('#t-lang-label').textContent = T('lang_label');
+  $('#t-lang-zh').textContent = T('lang_zh');
+  $('#t-lang-local').textContent = T('lang_local');
+  $('#t-lang-hint').textContent = T('lang_hint');
+  // active lang button
+  document.querySelectorAll('.lang-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.lang===lang);
+  });
+  // refresh country list & current cascade in new lang
+  loadCountries();
+}
+
+async function loadCountries(){
+  const res = await fetch(`/api/countries?lang=${lang}`).then(r=>r.json());
+  const sel = $('#country');
+  const prev = currentCountry;
+  sel.innerHTML = '<option value="">— '+T('please_select')+' —</option>';
+  res.forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c.iso2;
+    const f=flagEmoji(c.iso2);
+    const lvl=c.max_level?` · ${c.max_level}L`:'';
+    o.textContent=`${f} ${c.display} [${c.iso2}]${lvl}`;
+    sel.appendChild(o);
+  });
+  if(prev){ sel.value=prev; }
+  $('#stats').textContent = T('n_countries',{n:res.length});
+}
+
+$('#country').addEventListener('change', async e=>{
+  currentCountry=e.target.value;
+  $('#levels').innerHTML='';
+  $('#detail').classList.add('hidden');
+  $('#detail').innerHTML='';
+  if(!currentCountry) return;
+  const info=await fetch(`/api/levels?country=${currentCountry}`).then(r=>r.json());
+  const maxLevel=info.max_level||0;
+  if(maxLevel===0){
+    $('#levels').innerHTML=`<p class="hint">${T('no_subdiv')}</p>`;
+    return;
+  }
+  for(let lv=1;lv<=maxLevel;lv++){
+    const box=document.createElement('div');
+    box.className='field';
+    box.innerHTML=`<label>${T('level',{n:lv})}</label>
+      <div class="select-wrap"><select id="lv${lv}" data-level="${lv}" disabled><option value="">— ${T('loading')} —</option></select></div>`;
+    $('#levels').appendChild(box);
+    $(`#lv${lv}`).addEventListener('change', onLevelChange);
+  }
+  await loadLevel(1,'root');
+});
+
+async function loadLevel(level,parent){
+  const sel=$(`#lv${level}`);
+  if(!sel) return;
+  sel.disabled=true;
+  sel.innerHTML=`<option value="">— ${T('loading')} —</option>`;
+  const data=await fetch(`/api/children?country=${currentCountry}&parent=${encodeURIComponent(parent)}&lang=${lang}`).then(r=>r.json());
+  sel.innerHTML=`<option value="">— ${T('please_select')} —</option>`;
+  data.forEach(r=>{
+    const o=document.createElement('option');
+    o.value=r.code;
+    o.textContent=`${r.display}${r.level_name?' · '+r.level_name:''}`;
+    sel.appendChild(o);
+  });
+  sel.disabled=false;
+  clearBelow(level);
+}
+
+function clearBelow(level){
+  const maxLevel=document.querySelectorAll('#levels select').length;
+  for(let lv=level+1;lv<=maxLevel;lv++){
+    const s=$(`#lv${lv}`);
+    if(s){s.innerHTML=`<option value="">— ${T('select_parent')} —</option>`;s.disabled=true;}
+  }
+}
+
+async function onLevelChange(e){
+  const level=parseInt(e.target.dataset.level);
+  const code=e.target.value;
+  clearBelow(level);
+  if(!code){$('#detail').classList.add('hidden');return;}
+  const nextSel=$(`#lv${level+1}`);
+  if(nextSel) await loadLevel(level+1,code);
+  showDetail(code);
+}
+
+async function showDetail(code){
+  const r=await fetch(`/api/region?country=${currentCountry}&code=${encodeURIComponent(code)}&lang=${lang}`).then(r=>r.json());
+  if(r.error){$('#detail').classList.add('hidden');return;}
+  const reg=r.region;
+  const chain=r.chain.map(c=>c.display||(c.name)).join('  ›  ');
+  const d=$('#detail');
+  d.classList.remove('hidden');
+  d.innerHTML=`
+    <div class="detail-head">
+      <span class="flag">${flagEmoji(currentCountry)}</span>
+      <h3>${r.display}</h3>
+    </div>
+    <table>
+      <tr><td>${T('f_path')}</td><td class="chain">${chain}</td></tr>
+      <tr><td>${T('f_level')}</td><td>${T('level',{n:reg.level})} · ${reg.level_name||'-'}</td></tr>
+      <tr><td>${T('f_code')}</td><td><code>${reg.code}</code></td></tr>
+      <tr><td>${T('f_parent')}</td><td><code>${reg.parent_code||T('country_root')}</code></td></tr>
+      <tr><td>${T('f_country')}</td><td>${r.country_name} [${reg.country}]</td></tr>
+      <tr><td>${T('f_source')}</td><td>${reg.source||'-'}</td></tr>
+    </table>`;
+}
+
+$('#search-btn').addEventListener('click', doSearch);
+$('#q').addEventListener('keydown', e=>{if(e.key==='Enter') doSearch();});
+async function doSearch(){
+  const q=$('#q').value.trim();
+  if(!q) return;
+  const country=currentCountry||'ALL';
+  const data=await fetch(`/api/search?country=${country}&q=${encodeURIComponent(q)}&lang=${lang}`).then(r=>r.json());
+  const box=$('#search-results');
+  if(!data.length){box.innerHTML=`<p class="hint">${T('no_result')}</p>`;return;}
+  box.innerHTML=`<p class="hint">${T('found_n',{n:data.length})}</p>`;
+  const list=document.createElement('div');
+  list.className='result-list';
+  data.forEach(r=>{
+    const item=document.createElement('div');
+    item.className='result-item';
+    item.innerHTML=`<span class="r-flag">${flagEmoji(r.country)}</span>
+      <div class="r-body"><span class="r-name">${r.display}</span>
+      <span class="r-meta">${r.country} · ${T('level',{n:r.level})} ${r.level_name||''} · <code>${r.code}</code></span></div>`;
+    item.addEventListener('click',()=>{
+      $('#country').value=r.country;
+      currentCountry=r.country;
+      $('#country').dispatchEvent(new Event('change'));
+    });
+    list.appendChild(item);
+  });
+  box.appendChild(list);
+}
+
+// language switcher
+document.querySelectorAll('.lang-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    lang=b.dataset.lang;
+    localStorage.setItem('lang',lang);
+    loadI18n();
+  });
+});
+
+loadI18n();
+</script>
+</body>
+</html>

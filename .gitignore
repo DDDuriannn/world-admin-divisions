@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 数据库与缓存（可由 build_world.py / build_db.py 重建，不入库避免超大文件）
+db/*.db
+db/*.db-journal
+logs/
+crawler/world/__pycache__/
+
+# 中国导出成品（可由 build_db.py 重新生成，仅顶层）
+/data/
+
+# 工具二进制（gh CLI 等，不提交）
+tools/
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude 会话
+.claude/
